@@ -12,7 +12,7 @@ Abaixo estão as matérias organizadas por pastas, contendo seus respectivos có
 ---
 
 ## 🛠️ Como navegar
-Cada pasta de disciplina possui seu próprio arquivo `README.md` detalhando os pré-requisitos, instruções de compilação/execução e o escopo dos projetos ali contidos.
+Cada pasta de disciplina possui seu próprio arquivo `README.md` detalhando o escopo dos projetos ali contidos.
 
 ---
 *Desenvolvido como parte do meu aprendizado prático na ciência da computação.*
