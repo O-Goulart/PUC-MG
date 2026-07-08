@@ -1,0 +1,415 @@
+import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            ColecaoRestaurantes colecao = new ColecaoRestaurantes();
+            colecao.lerCsv();
+            
+            Restaurante[] todosRestaurantes = colecao.getRestaurantes();
+            int tamanhoColecao = colecao.getTamanho();
+
+            ListaDupla lista = new ListaDupla();
+            Scanner sc = new Scanner(System.in);
+            
+            if (sc.hasNextLine()) {
+                String entrada = sc.nextLine().trim();
+                
+                while (!entrada.equals("FIM") && !entrada.equals("-1")) {
+                    int idBuscado = Integer.parseInt(entrada);
+                    
+                    for (int i = 0; i < tamanhoColecao; i++) {
+                        if (todosRestaurantes[i].getId() == idBuscado) {
+                            lista.inserirFim(todosRestaurantes[i]);
+                            break;
+                        }
+                    }
+                    entrada = sc.nextLine().trim();
+                }
+            }
+
+            if (sc.hasNextLine()) {
+                int numOps = Integer.parseInt(sc.nextLine().trim());
+                
+                for (int k = 0; k < numOps; k++) {
+                    String linha = sc.nextLine().trim();
+                    String[] comando = linha.split(" ");
+
+                    if (comando[0].equals("II")) {
+                        int id = Integer.parseInt(comando[1]);
+                        for (int i = 0; i < tamanhoColecao; i++) {
+                            if (todosRestaurantes[i].getId() == id) {
+                                lista.inserirInicio(todosRestaurantes[i]);
+                                break;
+                            }
+                        }
+                    } 
+                    else if (comando[0].equals("I*")) {
+                        int pos = Integer.parseInt(comando[1]);
+                        int id = Integer.parseInt(comando[2]);
+                        for (int i = 0; i < tamanhoColecao; i++) {
+                            if (todosRestaurantes[i].getId() == id) {
+                                lista.inserir(todosRestaurantes[i], pos);
+                                break;
+                            }
+                        }
+                    } 
+                    else if (comando[0].equals("IF")) {
+                        int id = Integer.parseInt(comando[1]);
+                        for (int i = 0; i < tamanhoColecao; i++) {
+                            if (todosRestaurantes[i].getId() == id) {
+                                lista.inserirFim(todosRestaurantes[i]);
+                                break;
+                            }
+                        }
+                    } 
+                    else if (comando[0].equals("RI")) {
+                        Restaurante removido = lista.removerInicio();
+                        System.out.println("(R)" + removido.getNome());
+                    } 
+                    else if (comando[0].equals("R*")) {
+                        int pos = Integer.parseInt(comando[1]);
+                        Restaurante removido = lista.remover(pos);
+                        System.out.println("(R)" + removido.getNome());
+                    } 
+                    else if (comando[0].equals("RF")) {
+                        Restaurante removido = lista.removerFim();
+                        System.out.println("(R)" + removido.getNome());
+                    }
+                }
+            }
+            sc.close();
+
+            lista.mostrar();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class CelulaDupla {
+    public Restaurante elemento;
+    public CelulaDupla ant;
+    public CelulaDupla prox;
+
+    public CelulaDupla() {
+        this(null);
+    }
+
+    public CelulaDupla(Restaurante elemento) {
+        this.elemento = elemento;
+        this.ant = this.prox = null;
+    }
+}
+
+class ListaDupla {
+    private CelulaDupla primeiro;
+    private CelulaDupla ultimo;
+
+    public ListaDupla() {
+        primeiro = new CelulaDupla();
+        ultimo = primeiro;
+    }
+
+    public int tamanho() {
+        int tam = 0;
+        for (CelulaDupla i = primeiro.prox; i != null; i = i.prox) {
+            tam++;
+        }
+        return tam;
+    }
+
+    public void inserirInicio(Restaurante x) {
+        CelulaDupla tmp = new CelulaDupla(x);
+        tmp.ant = primeiro;
+        tmp.prox = primeiro.prox;
+        primeiro.prox = tmp;
+        
+        if (primeiro == ultimo) {
+            ultimo = tmp;
+        } else {
+            tmp.prox.ant = tmp;
+        }
+        tmp = null;
+    }
+
+    public void inserirFim(Restaurante x) {
+        ultimo.prox = new CelulaDupla(x);
+        ultimo.prox.ant = ultimo;
+        ultimo = ultimo.prox;
+    }
+
+    public Restaurante removerInicio() throws Exception {
+        if (primeiro == ultimo) {
+            throw new Exception("Erro ao remover (vazia)!");
+        }
+
+        CelulaDupla tmp = primeiro;
+        primeiro = primeiro.prox;
+        Restaurante resp = primeiro.elemento;
+        tmp.prox = primeiro.ant = null;
+        tmp = null;
+        return resp;
+    }
+
+    public Restaurante removerFim() throws Exception {
+        if (primeiro == ultimo) {
+            throw new Exception("Erro ao remover (vazia)!");
+        } 
+        Restaurante resp = ultimo.elemento;
+        ultimo = ultimo.ant;
+        ultimo.prox.ant = null;
+        ultimo.prox = null;
+        return resp;
+    }
+
+    public void inserir(Restaurante x, int pos) throws Exception {
+        int tamanho = tamanho();
+
+        if (pos < 0 || pos > tamanho) {
+            throw new Exception("Erro ao inserir: posicao (" + pos + ") invalida!");
+        } else if (pos == 0) {
+            inserirInicio(x);
+        } else if (pos == tamanho) {
+            inserirFim(x);
+        } else {
+            CelulaDupla i = primeiro;
+            for (int j = 0; j < pos; j++, i = i.prox);
+            
+            CelulaDupla tmp = new CelulaDupla(x);
+            tmp.ant = i;
+            tmp.prox = i.prox;
+            tmp.ant.prox = tmp.prox.ant = tmp;
+            tmp = i = null;
+        }
+    }
+
+    public Restaurante remover(int pos) throws Exception {
+        Restaurante resp;
+        int tamanho = tamanho();
+
+        if (primeiro == ultimo) {
+            throw new Exception("Erro ao remover (vazia)!");
+        } else if (pos < 0 || pos >= tamanho) {
+            throw new Exception("Erro ao remover: posicao (" + pos + ") invalida!");
+        } else if (pos == 0) {
+            resp = removerInicio();
+        } else if (pos == tamanho - 1) {
+            resp = removerFim();
+        } else {
+            CelulaDupla i = primeiro.prox;
+            for (int j = 0; j < pos; j++, i = i.prox);
+            i.ant.prox = i.prox;
+            i.prox.ant = i.ant;
+            resp = i.elemento;
+            i.prox = i.ant = null;
+            i = null;
+        }
+
+        return resp;
+    }
+
+    public void mostrar() {
+        int j = 0;
+        for (CelulaDupla i = primeiro.prox; i != null; i = i.prox, j++) {
+            System.out.println(i.elemento.formatar());
+        }
+    }
+}
+
+class Hora {
+    private int hora;
+    private int minuto;
+
+    public Hora() { this.hora = 0; this.minuto = 0; }
+    public Hora(int hora, int minuto) { this.hora = hora; this.minuto = minuto; }
+
+    public int getHora() { return hora; }
+    public void setHora(int hora) { this.hora = hora; }
+
+    public int getMinuto() { return minuto; }
+    public void setMinuto(int minuto) { this.minuto = minuto; }
+    
+    public String formatar() {
+        return String.format("%02d:%02d", hora, minuto);
+    }
+
+    public static Hora parseHora(String s) {
+        String[] partes = s.split(":");
+        return new Hora(Integer.parseInt(partes[0]), Integer.parseInt(partes[1]));
+    }
+}
+
+class Data {
+    private int ano;
+    private int mes;
+    private int dia;
+
+    public Data() { this.ano = 0; this.mes = 0; this.dia = 0; }
+    public Data(int ano, int mes, int dia) { this.ano = ano; this.mes = mes; this.dia = dia; }
+
+    public int getAno() { return ano; }
+    public void setAno(int ano) { this.ano = ano; }
+
+    public int getMes() { return mes; }
+    public void setMes(int mes) { this.mes = mes; }
+
+    public int getDia() { return dia; }
+    public void setDia(int dia) { this.dia = dia; }
+    
+    public String formatar() {
+        return String.format("%02d/%02d/%04d", dia, mes, ano);
+    }
+
+    public static Data parseData(String s) {
+        String[] partes = s.split("-");
+        return new Data(Integer.parseInt(partes[0]), Integer.parseInt(partes[1]), Integer.parseInt(partes[2]));
+    }
+}
+
+class Restaurante {
+    private int id;
+    private String nome;
+    private String cidade;
+    private int capacidade;
+    private double avaliacao;
+    private String tipos_cozinha[];
+    private int faixa_preco;
+    private Hora horario_abertura;
+    private Hora horario_fechamento;
+    private Data data_abertura;
+    private boolean aberto;
+
+    public Restaurante() {
+        this.id = 0;
+        this.nome = null;
+        this.cidade = null;
+        this.capacidade = 0;
+        this.avaliacao = 0.0;
+        this.tipos_cozinha = new String[100];
+        this.faixa_preco = 0;
+        this.horario_abertura = new Hora();
+        this.horario_fechamento = new Hora();
+        this.data_abertura = new Data();
+        this.aberto = false;
+    }
+
+    public Restaurante(int id, String nome, String cidade, int capacidade, double avaliacao, String tipos_cozinha[], int faixa_preco, Hora horario_abertura, Hora horario_fechamento, Data data_abertura, boolean aberto) {
+        this.id = id;
+        this.nome = nome;
+        this.cidade = cidade;
+        this.capacidade = capacidade;
+        this.avaliacao = avaliacao;
+        this.tipos_cozinha = tipos_cozinha;
+        this.faixa_preco = faixa_preco;
+        this.horario_abertura = horario_abertura;
+        this.horario_fechamento = horario_fechamento;
+        this.data_abertura = data_abertura;
+        this.aberto = aberto;
+    }
+    
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    
+    public String getCidade() { return cidade; }
+    public void setCidade(String cidade) { this.cidade = cidade; }
+    
+    public int getCapacidade() { return capacidade; }
+    public void setCapacidade(int capacidade) { this.capacidade = capacidade; }
+    
+    public double getAvaliacao() { return avaliacao; }
+    public void setAvaliacao(double avaliacao) { this.avaliacao = avaliacao; }
+    
+    public String[] getTipos_cozinha() { return tipos_cozinha; }
+    public void setTipos_cozinha(String[] tipos_cozinha) { this.tipos_cozinha = tipos_cozinha; }
+    
+    public int getFaixa_preco() { return faixa_preco; }
+    public void setFaixa_preco(int faixa_preco) { this.faixa_preco = faixa_preco; }
+    
+    public Hora getHorario_abertura() { return horario_abertura; }
+    public void setHorario_abertura(Hora horario_abertura) { this.horario_abertura = horario_abertura; }
+    
+    public Hora getHorario_fechamento() { return horario_fechamento; }
+    public void setHorario_fechamento(Hora horario_fechamento) { this.horario_fechamento = horario_fechamento; }
+    
+    public Data getData_abertura() { return data_abertura; }
+    public void setData_abertura(Data data_abertura) { this.data_abertura = data_abertura; }
+    
+    public boolean getAberto() { return aberto; }
+    public void setAberto(boolean aberto) { this.aberto = aberto; }
+    
+    public static Restaurante parseRestaurante(String linha){
+        Restaurante dinner = new Restaurante();
+        String[] dados = linha.split(",");
+        
+        dinner.setId(Integer.parseInt(dados[0]));
+        dinner.setNome(dados[1]);
+        dinner.setCidade(dados[2]);
+        dinner.setCapacidade(Integer.parseInt(dados[3]));
+        dinner.setAvaliacao(Double.parseDouble(dados[4]));
+        dinner.setTipos_cozinha(dados[5].split(";"));
+        dinner.setFaixa_preco(dados[6].length());
+        
+        String[] particao_horario = dados[7].split("-");
+        dinner.setHorario_abertura(Hora.parseHora(particao_horario[0]));
+        dinner.setHorario_fechamento(Hora.parseHora(particao_horario[1]));
+        
+        dinner.setData_abertura(Data.parseData(dados[8]));
+        dinner.setAberto(Boolean.parseBoolean(dados[9]));
+        
+        return dinner;
+    }
+
+    public String formatar() {
+        String tipos = "[" + String.join(",", this.tipos_cozinha) + "]";
+        String preco = "";
+        for (int i = 0; i < this.faixa_preco; i++) { preco += "$"; }
+
+        return "[" + this.id + " ## " + this.nome + " ## " + this.cidade + " ## " + 
+               this.capacidade + " ## " + this.avaliacao + " ## " + tipos + " ## " + 
+               preco + " ## " + this.horario_abertura.formatar() + "-" + 
+               this.horario_fechamento.formatar() + " ## " + 
+               this.data_abertura.formatar() + " ## " + this.aberto + "]";
+    }
+}
+
+class ColecaoRestaurantes{
+    private int tamanho;
+    private Restaurante restaurantes[];
+
+    public ColecaoRestaurantes(){
+        this.tamanho = 0;
+        this.restaurantes = new Restaurante[1000];
+    }
+
+    public int getTamanho(){ return tamanho;}
+    public Restaurante[] getRestaurantes(){return restaurantes;}
+
+    public void lerCsv() {
+        try {
+            File arquivo = new File("/tmp/restaurantes.csv");
+            Scanner sc = new Scanner(arquivo);
+
+            if (sc.hasNextLine()) {
+                sc.nextLine(); // Pula cabeçalho
+            }
+            
+            while (sc.hasNextLine()) {
+                String linha = sc.nextLine();
+                Restaurante estabelecimento = Restaurante.parseRestaurante(linha);
+                this.restaurantes[tamanho] = estabelecimento;
+                this.tamanho++;
+            }
+            sc.close();
+
+        } catch (FileNotFoundException e) {
+            System.out.println("Arquivo não encontrado!");
+        }
+    }
+}
